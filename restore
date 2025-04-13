@@ -1,9 +1,22 @@
 #!/bin/bash
 
-# Usage: ./restore_vm.sh <vm_name> <backup_directory> [<image_directory>]
-# Example: ./restore_vm.sh myvm /backups/myvm /var/lib/libvirt/images
+
 
 set -euo pipefail
+
+function show_help() {
+    echo "Usage: ./restore_vm.sh <vm_name> <backup_directory> [<image_directory>]"
+    echo "Example: ./restore_vm.sh myvm /backups/myvm /var/lib/libvirt/images"
+    echo
+    echo "Description:"
+    echo "  Syncs the specified local backup directory to a NAS or remote target using rsync."
+}
+
+# Show help if requested or incorrect args
+if [[ $# -ne 2 || "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+    show_help
+    exit 0
+fi
 
 if [[ $EUID -ne 0 ]]; then
     echo "This script must be run as root (use sudo)."

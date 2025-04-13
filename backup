@@ -1,9 +1,20 @@
 #!/bin/bash
 
-# Usage: ./backup_vm.sh <vm_name> <backup_directory(optional)>
-# Example: ./backup_vm.sh myvm /backups/myvm
-
 set -euo pipefail
+
+function show_help() {
+    echo "Usage: ./backup_vm.sh <vm_name> <backup_directory(optional)>"
+    echo "Example: ./backup_vm.sh myvm /backups/myvm"
+    echo
+    echo "Description:"
+    echo "  Syncs the specified local backup directory to a NAS or remote target using rsync."
+}
+
+# Show help if requested or incorrect args
+if [[ $# -ne 2 || "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+    show_help
+    exit 0
+fi
 
 if [[ $EUID -ne 0 ]]; then
     echo "This script must be run as root (use sudo)."
