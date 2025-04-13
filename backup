@@ -11,7 +11,7 @@ function show_help() {
 }
 
 # Show help if requested or incorrect args
-if [[ $# -ne 2 || "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+if [[ $# -ne 1 || "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
     show_help
     exit 0
 fi
