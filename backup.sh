@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# Usage: ./backup_vm.sh <vm_name> <backup_directory(optional)>
+# Example: ./backup_vm.sh myvm /backups/myvm
+
+set -euo pipefail
+
+if [[ $EUID -ne 0 ]]; then
+    echo "This script must be run as root (use sudo)."
+    exit 1
+fi
+
+VM_NAME="${1%/}"
+BACKUP_DIR="${2:-$1}"
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+BACKUP_PATH="${BACKUP_DIR}/${VM_NAME}_${TIMESTAMP}"
+
+mkdir -p "$BACKUP_PATH"
+
+echo "Initiating backup for VM: $VM_NAME"
+
+# Step 1: Gracefully shut down the VM
+echo "Shutting down VM..."
+virsh shutdown "$VM_NAME"
+
+# Wait until the VM is shut off
+while [[ "$(virsh domstate "$VM_NAME")" != "shut off" ]]; do
+    echo "Waiting for VM to shut down..."
+    sleep 5
+done
+
+# Step 2: Export VM configuration
+echo "Exporting VM configuration..."
+virsh dumpxml "$VM_NAME" > "${BACKUP_PATH}/${VM_NAME}.xml"
+
+# Step 3: Identify and copy disk images
+echo "Identifying disk images..."
+mapfile -t DISKS < <(virsh domblklist "$VM_NAME" --details | awk '/disk/ {print $4}')
+
+for DISK in "${DISKS[@]}"; do
+    if [[ -f "$DISK" ]]; then
+        DISK_BASENAME=$(basename "$DISK")
+        echo "Copying disk: $DISK_BASENAME"
+        cp --sparse=always "$DISK" "${BACKUP_PATH}/${DISK_BASENAME}"
+    else
+        echo "Warning: Disk file $DISK not found. Skipping."
+    fi
+done
+
+# Step 4: Restart the VM
+echo "Starting VM..."
+virsh start "$VM_NAME"
+
+echo "Backup completed successfully. Files saved in: $BACKUP_PATH"
+
