@@ -1,0 +1,38 @@
+#!/bin/bash
+
+set -euo pipefail
+
+show_help() {
+    echo "Usage: $0 <backup_directory> <nas_target>"
+    echo "Example: $0 /backups/myvm user@nas:/mnt/backups/vms"
+    echo
+    echo "Description:"
+    echo "  Syncs the specified local backup directory to a NAS or remote target using rsync."
+}
+
+# Show help if requested or incorrect args
+if [[ $# -ne 2 || "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+    show_help
+    exit 0
+fi
+
+BACKUP_DIR="$1"
+NAS_TARGET="$2"
+
+# Check if rsync is installed
+if ! command -v rsync >/dev/null 2>&1; then
+    echo "Error: rsync is not installed."
+    exit 1
+fi
+
+# Check if backup directory exists
+if [[ ! -d "$BACKUP_DIR" ]]; then
+    echo "Error: Backup directory '$BACKUP_DIR' does not exist."
+    exit 1
+fi
+
+# Run rsync with progress and compression
+echo "Starting rsync to NAS..."
+rsync -avh --progress "$BACKUP_DIR" "$NAS_TARGET/"
+
+echo "Backup directory '$BACKUP_DIR' successfully synced to '$NAS_TARGET'."

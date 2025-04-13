@@ -1,0 +1,38 @@
+#!/bin/bash
+
+set -euo pipefail
+
+show_help() {
+    echo "Usage: ./rsync_retrieve_from_nas.sh <nas_source> <local_destination>"
+    echo "Example: ./rsync_retrieve_from_nas.sh user@nas:/mnt/backups/vms/myvm /backups/myvm"
+    echo
+    echo "Description:"
+    echo "  Syncs the specified local backup directory to a NAS or remote target using rsync."
+}
+
+# Show help if requested or incorrect args
+if [[ $# -ne 2 || "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+    show_help
+    exit 0
+fi
+
+NAS_SOURCE="$1"
+LOCAL_DEST="$2"
+
+# Check if rsync is installed
+if ! command -v rsync >/dev/null 2>&1; then
+    echo "Error: rsync is not installed."
+    exit 1
+fi
+
+# Check if destination exists; create if not
+if [[ ! -d "$LOCAL_DEST" ]]; then
+    echo "Local destination '$LOCAL_DEST' does not exist. Creating..."
+    mkdir -p "$LOCAL_DEST"
+fi
+
+# Sync from NAS to local
+echo "Starting rsync from NAS..."
+rsync -avh --progress "$NAS_SOURCE/" "$LOCAL_DEST/"
+
+echo "Backup from '$NAS_SOURCE' retrieved successfully to '$LOCAL_DEST'."
